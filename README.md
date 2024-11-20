@@ -5,11 +5,10 @@ PST is a collection of tools for PostgreSQL database management and environment 
 ## Installation
 
 Create and activate a virtual environment:
+- This path is required `~/.pst`
 
 ```bash
-# This path is required.
-python3 -m venv ~/.pst
-source ~/.pst/bin/activate
+python3 -m venv ~/.pst && source ~/.pst/bin/activate
 ```
 
 Install PST:
@@ -18,10 +17,9 @@ Install PST:
 pip install .
 ```
 
-Copy configs:
+Copy base configs:
 
 ```bash
-# This path is required
 cp -R config ~/.pst
 ```
 
@@ -36,7 +34,7 @@ source ~/.pst/bin/activate
 ### pst-config
 
 This tool will initialize PST config files:
-- Find RDS instances and replicas and add them to `config/*.env.yaml`
+- Find RDS instances and replicas and add them to `~/.pst/config/*.env.yaml`
 - Configure each RDS instance in `~/.pgpass` 
 
 ```bash
@@ -66,7 +64,7 @@ pg dev
 pg dev parent
 
 # Connect to the data replica in dev parent
-mm dev parent datareplica
+pg dev parent datareplica
 ```
 
 ## Configuration
