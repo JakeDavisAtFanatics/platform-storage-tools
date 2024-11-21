@@ -65,24 +65,34 @@ def pst_config(environment: str = None):
 
                     # Update pgpass file for each role
                     aws_ssm = AwsSsmService(session, aws_region)
-                    for role, role_info in rds_info.items():
-                        hostname = role_info["endpoint"]
-                        port = "5432"  # Assuming default PostgreSQL port
-                        database = "postgres"  # Assuming default database name
-                        username = aws_ssm.get_parameter(
-                            f"/{environment_name}/database/master-user"
-                        )
-                        password = aws_ssm.get_parameter(
-                            f"/{environment_name}/database/master-pass"
-                        )
-
-                        if username and password:
+                    if environment == "local":
+                        for role, role_info in rds_info.items():
+                            hostname = role_info["endpoint"]
+                            port = role_info["port"]
+                            database = "*"
+                            username = "postgres"
+                            password = "password"
                             update_pgpass(hostname, port, database, username, password)
                             print(f'  Updated pgpass for role: "{role}"')
-                        else:
-                            print(
-                                f'  Failed to retrieve credentials for role: "{role}"'
+                    else:
+                        for role, role_info in rds_info.items():
+                            hostname = role_info["endpoint"]
+                            port = "5432"  # Assuming default PostgreSQL port
+                            database = "postgres"  # Assuming default database name
+                            username = aws_ssm.get_parameter(
+                                f"/{environment_name}/database/master-user"
                             )
+                            password = aws_ssm.get_parameter(
+                                f"/{environment_name}/database/master-pass"
+                            )
+
+                            if username and password:
+                                update_pgpass(hostname, port, database, username, password)
+                                print(f'  Updated pgpass for role: "{role}"')
+                            else:
+                                print(
+                                    f'  Failed to retrieve credentials for role: "{role}"'
+                                )
 
             except Exception as e:
                 print(f"Error processing cluster {cluster_name}: {e}")
