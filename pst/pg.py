@@ -53,9 +53,15 @@ def process_config(env: str, cluster: str = None, role: str = None):
     endpoint = role_info["endpoint"]
     instance_name = role_info["instance_name"]
 
+    # Determine the port based on the environment
+    if env == "local":
+        port = role_info["port"]
+    else:
+        port = "5432"
+
     # Construct psql command
     custom_prompt = f"{instance_name} %/=> "
-    psql_command = f"psql -h {endpoint} -d postgres -p 5432 -U postgres -v PROMPT1='{custom_prompt}'"
+    psql_command = f"psql -h {endpoint} -d postgres -p {port} -U postgres -v PROMPT1='{custom_prompt}'"
 
     # Execute psql command
     try:

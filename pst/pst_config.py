@@ -43,55 +43,70 @@ def pst_config(environment: str = None):
     aws_sso = AwsSsoService()
 
     for env_file in env_files:
+        # Set "e" here in case the user passed in the environment "all"
+        e = env_file.split('.')[0]
         config_path = os.path.join(config_dir, env_file)
         config = load_yaml_config(config_path)
 
-        for cluster_name, cluster_config in config["clusters"].items():
-            aws_account_name = cluster_config["aws_account_name"]
-            aws_region = cluster_config["aws_region"]
-            environment_name = cluster_config["environment_name"]
-            profile_name = f"{aws_account_name}.AdministratorAccess"
+        if e == "local":
+            # For local environment, only update pgpass without modifying the config file
+            for cluster_name, cluster_config in config["clusters"].items():
+                for role, role_info in cluster_config["roles"].items():
+                    hostname = role_info["endpoint"]
+                    port = role_info["port"]
+                    database = "*"
+                    username = "postgres"
+                    password = "password"
+                    update_pgpass(hostname, port, database, username, password)
+                    print(f'  Updated pgpass for role: "{role}" in cluster: "{cluster_name}"')
+            print(f"Processed local environment without modifying {env_file}")
+        else:
+            for cluster_name, cluster_config in config["clusters"].items():
+                aws_account_name = cluster_config["aws_account_name"]
+                aws_region = cluster_config["aws_region"]
+                environment_name = cluster_config["environment_name"]
+                profile_name = f"{aws_account_name}.AdministratorAccess"
 
-            try:
-                aws_sso.authenticate(profile_name)
-                session = aws_sso.get_session()
+                try:
+                    aws_sso.authenticate(profile_name)
+                    session = aws_sso.get_session()
 
-                aws_rds = AwsRdsService(session)
-                rds_info = aws_rds.get_rds_instance(environment_name, aws_region)
+                    aws_rds = AwsRdsService(session)
+                    rds_info = aws_rds.get_rds_instance(environment_name, aws_region)
 
-                if rds_info:
-                    cluster_config["roles"] = rds_info
-                    print(f'Processing cluster: "{environment_name}-postgresql"')
+                    if rds_info:
+                        cluster_config["roles"] = rds_info
+                        print(f'Processing cluster: "{environment_name}-postgresql"')
 
-                    # Update pgpass file for each role
-                    aws_ssm = AwsSsmService(session, aws_region)
-                    for role, role_info in rds_info.items():
-                        hostname = role_info["endpoint"]
-                        port = "5432"  # Assuming default PostgreSQL port
-                        database = "postgres"  # Assuming default database name
-                        username = aws_ssm.get_parameter(
-                            f"/{environment_name}/database/master-user"
-                        )
-                        password = aws_ssm.get_parameter(
-                            f"/{environment_name}/database/master-pass"
-                        )
-
-                        if username and password:
-                            update_pgpass(hostname, port, database, username, password)
-                            print(f'  Updated pgpass for role: "{role}"')
-                        else:
-                            print(
-                                f'  Failed to retrieve credentials for role: "{role}"'
+                        # Update pgpass file for each role
+                        aws_ssm = AwsSsmService(session, aws_region)
+                        for role, role_info in rds_info.items():
+                            hostname = role_info["endpoint"]
+                            port = "5432"  # Assuming default PostgreSQL port
+                            database = "*"  # Use wildcard for all databases
+                            username = aws_ssm.get_parameter(
+                                f"/{environment_name}/database/master-user"
+                            )
+                            password = aws_ssm.get_parameter(
+                                f"/{environment_name}/database/master-pass"
                             )
 
-            except Exception as e:
-                print(f"Error processing cluster {cluster_name}: {e}")
-                print("Skipping this cluster and continuing with the next one.")
-            finally:
-                print("---")  # Add a separator between clusters for better readability
+                            if username and password:
+                                update_pgpass(hostname, port, database, username, password)
+                                print(f'  Updated pgpass for role: "{role}"')
+                            else:
+                                print(
+                                    f'  Failed to retrieve credentials for role: "{role}"'
+                                )
 
-        save_yaml_config(config_path, config)
-        print(f"Updated configuration for {env_file}")
+                except Exception as e:
+                    print(f"Error processing cluster {cluster_name}: {e}")
+                    print("Skipping this cluster and continuing with the next one.")
+                finally:
+                    print("---")  # Add a separator between clusters for better readability
+
+            save_yaml_config(config_path, config)
+            print(f"Updated configuration for {env_file}")
 
 
 def update_pgpass(
