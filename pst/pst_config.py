@@ -43,10 +43,12 @@ def pst_config(environment: str = None):
     aws_sso = AwsSsoService()
 
     for env_file in env_files:
+        # Set "e" here in case the user passed in the environment "all"
+        e = env_file.split('.')[0]
         config_path = os.path.join(config_dir, env_file)
         config = load_yaml_config(config_path)
 
-        if environment == "local":
+        if e == "local":
             # For local environment, only update pgpass without modifying the config file
             for cluster_name, cluster_config in config["clusters"].items():
                 for role, role_info in cluster_config["roles"].items():
