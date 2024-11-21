@@ -81,7 +81,7 @@ def pst_config(environment: str = None):
                         for role, role_info in rds_info.items():
                             hostname = role_info["endpoint"]
                             port = "5432"  # Assuming default PostgreSQL port
-                            database = "postgres"  # Assuming default database name
+                            database = "*"  # Use wildcard for all databases
                             username = aws_ssm.get_parameter(
                                 f"/{environment_name}/database/master-user"
                             )
