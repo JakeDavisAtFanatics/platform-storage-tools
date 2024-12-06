@@ -1,6 +1,6 @@
 # PST (Platform Storage Tools)
 
-PST is a collection of tools for PostgreSQL database management and environment configuration.
+A collection of tools for PostgreSQL database management and environment configuration.
 
 ## Installation
 
@@ -23,19 +23,39 @@ Copy base configs:
 cp -R config ~/.pst
 ```
 
-## Usage
-
-To use PST, you must first always activate the virtual environment:
+Add helper tools and aliases to your path:
 
 ```bash
+# Platform Storage Tools
+export PATH="$HOME/workspace/platform-storage-tools/bin:$PATH"
+alias activate="source $HOME/.pst/bin/activate"
+```
+
+Optional: If `psql` is not installed and in your path yet:
+
+```bash
+brew install libpq
+
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH" # psql
+```
+
+## Usage
+
+First, you must always activate the virtual environment:
+
+```bash
+# If you added the alias during installation you can just run
+activate
+
+# Or run
 source ~/.pst/bin/activate
 ```
 
 ### pst-config
 
-This tool will initialize PST config files:
+Initialize PST config files:
 - Find RDS instances and replicas and add them to `~/.pst/config/*.env.yaml`
-- Configure each RDS instance in `~/.pgpass` 
+- Configure RDS connections in `~/.pgpass` 
 
 ```bash
 pst-config [-h] [environment]
@@ -49,7 +69,7 @@ pst-config dev
 
 ### pg
 
-This tool can be used interactively to find and connect to RDS instances. Or connect to RDS quickly with a full command.
+Interactively connect to RDS instances:
 
 ```bash
 pg [-h] [environment] [cluster] [role]
@@ -65,6 +85,16 @@ pg dev parent
 
 # Connect to the data replica in dev parent
 pg dev parent datareplica
+```
+
+### pg-hosts
+
+Print RDS hostnames and ports (from `~/.pgpass`) matching a search term:
+- Use these hostnames in other tools like `pg_repack`
+
+```bash
+# List all hostnames matching inf-dev
+pg-hosts inf-dev
 ```
 
 ### pg_repack
