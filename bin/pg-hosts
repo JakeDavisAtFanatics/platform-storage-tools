@@ -1,0 +1,10 @@
+#!/bin/bash
+
+HOST=$1
+
+if [ -z $HOST ]; then
+  echo "No search term provided"
+  exit 1
+fi
+
+grep $HOST ~/.pgpass | awk -F : '{ print $1 " " $2 }'
